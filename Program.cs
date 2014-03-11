@@ -238,18 +238,42 @@ namespace ConvSgvX3D
 	}
 }
  */
-
-					rtObj.Element("Scene").ReplaceAll(
-					from elm in rtObj.Element("Scene").Elements()
-					where elm.Name == "Transform"
-					select new XElement("Group",
-							elm.Element("Transform").Element("Group").Attributes(),
-							new XElement("Transform",
-								elm.Attributes(),
+					List<XElement> cnt = rtObj.Element("Scene").Elements("Transform").ToList();
+					if (cnt.Count() > 1)
+					{
+						rtObj.Element("Scene").ReplaceAll(
+							new XElement("Group",
+								from elm in rtObj.Element("Scene").Elements()
+								where elm.Name == "Transform"
+								select new XElement("Transform",
+									elm.Attributes(),
+									new XElement(
+										elm.Element("Transform").Element("Group").Element("Shape")
+										))));
+						//foreach(XElement el in rtObj.Element("Scene").Element("Group").Elements("Transform"))
+						//{
+						//}
+					}
+					else
+					{
+						rtObj.Element("Scene").ReplaceAll(
+						from elm in rtObj.Element("Scene").Elements()
+						where elm.Name == "Transform"
+						select new XElement("Group",
+								elm.Element("Transform").Element("Group").Attributes(),
 								new XElement("Transform",
-									elm.Element("Transform").Attributes(),
-									elm.Element("Transform").Element("Group").Element("Shape")
-								))));
+									elm.Attributes(),
+									new XElement(
+										elm.Element("Transform").Element("Group").Element("Shape")
+									))));
+					}
+
+					//tentative modification
+					foreach (XElement el in rtObj.Descendants("Material"))
+					{
+						el.SetAttributeValue("diffuseColor", "0.5 0.7 0.5");
+						el.SetAttributeValue("transparency", "0.0");
+					}
 
 					break;
 
@@ -260,6 +284,28 @@ namespace ConvSgvX3D
 							new XElement("Transform",
 								rtObj.Element("Scene").Elements("Shape")
 								)));
+					rtObj
+						.Element("Scene")
+						.Element("Group")
+						.Element("Transform")
+						.Element("Shape")
+						.Add(new XElement("Material"));
+
+					rtObj
+						.Element("Scene")
+						.Element("Group")
+						.Element("Transform")
+						.Element("Shape")
+						.Element("Material")
+						.SetAttributeValue("diffuseColor", "0.5 0.7 0.5");
+
+					rtObj
+						.Element("Scene")
+						.Element("Group")
+						.Element("Transform")
+						.Element("Shape")
+						.Element("Material")
+						.SetAttributeValue("transparency", "0.0");
 
 					break;
 				//-----------------------------------------------
@@ -315,8 +361,21 @@ namespace ConvSgvX3D
 				int idt = identifyExpType(rtObj);
 				XElement newObj = convertSgvX3DForm(rtObj, idt);
 				//Console.WriteLine(newObj);
-				string newfile = Path.GetFileNameWithoutExtension(args[0])+"_sgv.x3d";
-				newObj.Save(newfile);
+				newObj.Save("tmpout");
+
+				string newfile = Path.GetFileNameWithoutExtension(args[0]) + "_sgv.x3d";
+				StreamReader r = new StreamReader("tmpout");
+				StreamWriter w = new StreamWriter(newfile);
+				string line;
+				bool eofflg = true;
+				while (eofflg)
+				{
+					line = r.ReadLine();
+					//Console.WriteLine(line);
+					w.WriteLine(line);
+					if(line==null) eofflg=false;
+				}
+				w.Close();
 			}
 			else
 			{
